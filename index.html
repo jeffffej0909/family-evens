@@ -44,10 +44,10 @@ button.danger{color:var(--b);background:var(--b-soft)}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chipw{display:inline-flex;align-items:center;border-radius:99px;background:var(--field)}
 .chipw.due{background:var(--a-soft)}
-.chip{font-size:13px;padding:6px 4px 6px 12px;background:none}
+.chip{font-size:13px;padding:6px 2px 6px 12px;background:none}
 .chip b{font-weight:400;color:var(--mut)}
 .due .chip{color:var(--a)}.due .chip b{color:var(--a);opacity:.8}
-.x{background:none;padding:6px 11px 6px 6px;color:var(--mut);font-size:15px;line-height:1}
+.x{background:none;padding:6px 10px 6px 4px;color:var(--mut);font-size:15px;line-height:1}
 .link{background:none;color:var(--a);font-size:13px;padding:6px 4px}
 /* Phones: suggestions sit in one row that swipes sideways */
 @media (max-width:600px){
@@ -177,14 +177,17 @@ function render(){
     if(!s.periods.has(p)) due.push({...s,period:p});
   }
   const chips=$("chips");chips.textContent="";
-  const add=(s,cls,txt,key)=>{
-    if(S.hidden.includes(key)) return;
+  const shown=new Set();
+  const add=(s,cls,tip,key)=>{
+    if(S.hidden.includes(key)||shown.has(s.label)) return;
+    shown.add(s.label);
     const w=document.createElement("span");w.className="chipw "+cls;
-    const b=document.createElement("button");b.type="button";b.className="chip";b.innerHTML=txt;b.onclick=()=>pick(s);
+    const b=document.createElement("button");b.type="button";b.className="chip";b.textContent=s.label;b.title=tip;b.onclick=()=>pick(s);
     const x=document.createElement("button");x.type="button";x.className="x";x.textContent="×";x.setAttribute("aria-label","Hide this suggestion");x.onclick=()=>{S.hidden=[...S.hidden,key];persist();render()};
     w.append(b,x);chips.append(w)};
-  due.forEach(s=>add(s,"due",`${esc(s.label)} <b>· ${plabel(s.period)} due</b>`,`due:${s.label}:${s.period}`));
-  sug.filter(s=>!S.hidden.includes("sug:"+s.label)).slice(0,8).forEach(s=>add(s,"",`${esc(s.label)} <b>${esc(N[s.payer])} · ${Math.round(s.amount).toLocaleString()}</b>`,"sug:"+s.label));
+  // Blue = a monthly bill not yet logged; tapping it fills in that month.
+  due.forEach(s=>add(s,"due",`${plabel(s.period)} not logged`,`due:${s.label}:${s.period}`));
+  sug.filter(s=>!S.hidden.includes("sug:"+s.label)).slice(0,8).forEach(s=>add(s,"",`${N[s.payer]} · ${Math.round(s.amount).toLocaleString()}`,"sug:"+s.label));
   if(S.hidden.length){const r=document.createElement("button");r.type="button";r.className="link";r.textContent=`Show ${S.hidden.length} hidden`;r.onclick=()=>{S.hidden=[];persist();render()};chips.append(r)}
   $("known").innerHTML=sug.map(s=>`<option value="${esc(s.label)}">`).join("");
   const pv=$("payer").value||"a";
