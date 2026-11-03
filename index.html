@@ -49,12 +49,11 @@ button.danger{color:var(--b);background:var(--b-soft)}
 .due .chip{color:var(--a)}.due .chip b{color:var(--a);opacity:.8}
 .x{background:none;padding:6px 10px 6px 4px;color:var(--mut);font-size:15px;line-height:1}
 .link{background:none;color:var(--a);font-size:13px;padding:6px 4px}
-/* Phones: suggestions sit in one row that swipes sideways */
-@media (max-width:600px){
-  .chips{flex-wrap:nowrap;overflow-x:auto;margin-inline:-20px;padding-inline:20px;scroll-padding-inline:20px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
-  .chips::-webkit-scrollbar{display:none}
-  .chipw,.link{flex:none;white-space:nowrap}
-}
+.duebox{display:grid;gap:2px;background:var(--a-soft);border-radius:16px;padding:10px 6px 6px 14px}
+.duebox h3{margin:0 0 4px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:var(--a)}
+.dr{display:flex;align-items:center}
+.dr .go{flex:1;min-width:0;display:flex;justify-content:space-between;gap:10px;background:none;padding:7px 4px 7px 0;border-radius:8px;text-align:left;font-weight:500}
+.dr .go small{color:var(--mut);font-weight:400;font-variant-numeric:tabular-nums;white-space:nowrap}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .grid>label{display:grid;gap:5px;font-size:13px;color:var(--mut);min-width:0}
 .wide{grid-column:1/-1}
@@ -90,6 +89,7 @@ details summary{cursor:pointer;color:var(--mut);font-size:14px;font-weight:500}
 
   <form class="panel card" id="form">
     <div class="row" style="justify-content:space-between"><h2 id="ftitle">Add an expense</h2><button type="button" id="cancel" hidden>Cancel edit</button></div>
+    <div class="duebox" id="due" hidden></div>
     <div class="chips" id="chips"></div>
     <div class="grid">
       <label class="wide">What<input id="what" required list="known" autocomplete="off" placeholder="Pick above or type, e.g. Dinner"><datalist id="known"></datalist></label>
@@ -133,7 +133,6 @@ const MONTHS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov",
 const plabel=p=>{const[y,m]=p.split("-");return MONTHS[+m-1]+" "+y};
 const ymd=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 const nowP=()=>ymd(new Date()).slice(0,7);
-const MONTHLY=["Mortgage","Maid salary"];
 const KEY="family-evens-v1";
 
 let S={expenses:[],hidden:[],names:{a:"Jeff",b:"Wife"}};
@@ -158,6 +157,25 @@ function suggestions(){
   }
   return out.sort((x,y)=>y.n-x.n);
 }
+// Months as one number so gaps between them are simple subtraction.
+const pIdx=p=>{const[y,m]=p.split("-");return +y*12+(+m-1)};
+const idxP=i=>Math.floor(i/12)+"-"+String(i%12+1).padStart(2,"0");
+// A repeating expense is expected again one usual gap after its last month (monthly, quarterly...).
+// It's listed when that month has arrived and nothing has been recorded since.
+function expectedNotLogged(sug){
+  const cur=pIdx(nowP()),out=[];
+  for(const s of sug){
+    const ps=[...s.periods].map(pIdx).filter(i=>i>cur-18&&i<=cur).sort((a,b)=>a-b);
+    if(ps.length<3) continue;
+    const gaps=ps.slice(1).map((v,i)=>v-ps[i]).sort((a,b)=>a-b);
+    const gap=Math.max(1,gaps[Math.floor(gaps.length/2)]);
+    const last=ps.at(-1),next=last+gap;
+    if(gap>6||next>cur) continue;
+    const period=idxP(next);
+    if(!S.hidden.includes(`due:${s.label}:${period}`)) out.push({...s,period,late:next<cur});
+  }
+  return out;
+}
 function render(){
   const N=S.names,open=S.expenses.filter(r=>!r.settled);
   const net=open.reduce((s,r)=>s+(r.payer==="a"?r.share:-r.share),0);
@@ -170,11 +188,20 @@ function render(){
     const n=document.createElement("button");n.textContent="Not yet";n.onclick=()=>{confirmSettle=false;render()};
     st.append(y,n);
   }
-  const sug=suggestions(),due=[];
-  for(const s of sug) if(MONTHLY.includes(s.label)) for(let i=2;i>=0;i--){
-    const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-i);
-    const p=ymd(d).slice(0,7);
-    if(!s.periods.has(p)) due.push({...s,period:p});
+  const sug=suggestions(),due=expectedNotLogged(sug);
+  const dbox=$("due");dbox.textContent="";dbox.hidden=!due.length;
+  if(due.length){
+    const h=document.createElement("h3");h.textContent=`Not recorded yet · ${plabel(nowP())}`;dbox.append(h);
+    for(const s of due){
+      const row=document.createElement("div");row.className="dr";
+      const b=document.createElement("button");b.type="button";b.className="go";b.onclick=()=>pick(s);
+      const name=document.createElement("span");name.textContent=s.label+(s.late?` (since ${plabel(s.period).slice(0,3)})`:"");
+      const info=document.createElement("small");info.textContent=`${N[s.payer]} · ${Math.round(s.amount).toLocaleString()}`;
+      b.append(name,info);
+      const x=document.createElement("button");x.type="button";x.className="x";x.textContent="×";x.setAttribute("aria-label",`Not needed this time: ${s.label}`);
+      x.onclick=()=>{S.hidden=[...S.hidden,`due:${s.label}:${s.period}`];persist();render()};
+      row.append(b,x);dbox.append(row);
+    }
   }
   const chips=$("chips");chips.textContent="";
   const shown=new Set();
@@ -185,8 +212,7 @@ function render(){
     const b=document.createElement("button");b.type="button";b.className="chip";b.textContent=s.label;b.title=tip;b.onclick=()=>pick(s);
     const x=document.createElement("button");x.type="button";x.className="x";x.textContent="×";x.setAttribute("aria-label","Hide this suggestion");x.onclick=()=>{S.hidden=[...S.hidden,key];persist();render()};
     w.append(b,x);chips.append(w)};
-  // Blue = a monthly bill not yet logged; tapping it fills in that month.
-  due.forEach(s=>add(s,"due",`${plabel(s.period)} not logged`,`due:${s.label}:${s.period}`));
+  due.forEach(s=>shown.add(s.label));
   sug.filter(s=>!S.hidden.includes("sug:"+s.label)).slice(0,8).forEach(s=>add(s,"",`${N[s.payer]} · ${Math.round(s.amount).toLocaleString()}`,"sug:"+s.label));
   if(S.hidden.length){const r=document.createElement("button");r.type="button";r.className="link";r.textContent=`Show ${S.hidden.length} hidden`;r.onclick=()=>{S.hidden=[];persist();render()};chips.append(r)}
   $("known").innerHTML=sug.map(s=>`<option value="${esc(s.label)}">`).join("");
