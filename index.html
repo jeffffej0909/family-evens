@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Family Evens</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Evens">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+/* One narrow ledger column: balance first, then entry, then the record. */
+:root{--bg:#f2f2f7;--glow1:#c9dcff;--glow2:#ffd9e6;--glow3:#d8f5e3;--panel:rgba(255,255,255,.62);--field:rgba(118,118,128,.12);--fg:#1c1c1e;--mut:#8a8a8e;--line:rgba(60,60,67,.14);--a:#007aff;--a-soft:rgba(0,122,255,.12);--b:#ff2d55;--b-soft:rgba(255,45,85,.12);--shadow:0 8px 32px rgba(0,0,0,.06);
+--disp:-apple-system,BlinkMacSystemFont,"SF Pro Display","PingFang HK","Helvetica Neue",system-ui,sans-serif;--body:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang HK","Helvetica Neue",system-ui,sans-serif;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#000;--glow1:#0a2a5c;--glow2:#4a0f2a;--glow3:#0b3a2a;--panel:rgba(44,44,46,.55);--field:rgba(118,118,128,.24);--fg:#f5f5f7;--mut:#98989d;--line:rgba(84,84,88,.5);--a:#0a84ff;--a-soft:rgba(10,132,255,.2);--b:#ff375f;--b-soft:rgba(255,55,95,.2);--shadow:0 8px 32px rgba(0,0,0,.4);color-scheme:dark}}
+*{-webkit-tap-highlight-color:transparent}
+body{margin:0;background:radial-gradient(60vmax 50vmax at 0% 0%,var(--glow1),transparent 60%),radial-gradient(60vmax 50vmax at 100% 30%,var(--glow2),transparent 60%),radial-gradient(50vmax 40vmax at 30% 100%,var(--glow3),transparent 60%),var(--bg);background-attachment:fixed;min-height:100vh;color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.45;letter-spacing:-.01em;-webkit-font-smoothing:antialiased}
+[hidden]{display:none!important}
+main{max-width:680px;margin:0 auto;padding-top:max(20px,env(safe-area-inset-top));padding-bottom:max(48px,env(safe-area-inset-bottom));padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right));display:grid;gap:22px}
+main>*{min-width:0}
+h1,h2{font-family:var(--disp);margin:0}
+h2{font-size:20px;font-weight:600;letter-spacing:-.02em}
+.bal{display:grid;gap:8px}
+.eyebrow{color:var(--mut);font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.big{font-family:var(--disp);font-size:clamp(32px,8vw,48px);font-weight:700;letter-spacing:-.03em;line-height:1.08;text-wrap:balance;font-variant-numeric:tabular-nums}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button,input,select{font:inherit;color:inherit}
+button{border:0;background:var(--field);border-radius:99px;padding:8px 16px;cursor:pointer;font-weight:500;transition:transform .15s,opacity .15s}
+button:active{transform:scale(.97);opacity:.8}
+button.pri{background:var(--a);color:#fff;font-weight:600}
+button.danger{color:var(--b);background:var(--b-soft)}
+:focus-visible{outline:3px solid var(--a-soft);outline-offset:1px}
+.card{background:var(--panel);border-radius:26px;box-shadow:var(--shadow);position:relative;isolation:isolate}
+/* Liquid glass, after rdev/liquid-glass-react (MIT): blurred backdrop plus a light rim */
+.card::before{content:"";position:absolute;inset:0;border-radius:inherit;z-index:-1;pointer-events:none;-webkit-backdrop-filter:blur(16px) saturate(180%);backdrop-filter:blur(16px) saturate(180%)}
+.card::after{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.5px;pointer-events:none;mix-blend-mode:overlay;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;background:linear-gradient(135deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.45) 33%,rgba(255,255,255,.9) 66%,rgba(255,255,255,0) 100%)}
+.hero{padding:22px 22px 20px}
+.panel{padding:20px;display:grid;gap:14px}
+#listWrap{padding:6px 18px 10px;margin-top:12px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chipw{display:inline-flex;align-items:center;border-radius:99px;background:var(--field)}
+.chipw.due{background:var(--a-soft)}
+.chip{font-size:13px;padding:6px 4px 6px 12px;background:none}
+.chip b{font-weight:400;color:var(--mut)}
+.due .chip{color:var(--a)}.due .chip b{color:var(--a);opacity:.8}
+.x{background:none;padding:6px 11px 6px 6px;color:var(--mut);font-size:15px;line-height:1}
+.link{background:none;color:var(--a);font-size:13px;padding:6px 4px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid>label{display:grid;gap:5px;font-size:13px;color:var(--mut);min-width:0}
+.wide{grid-column:1/-1}
+input,select{width:100%;box-sizing:border-box;background:var(--field);border:0;border-radius:12px;padding:11px 12px;font-size:16px;color:var(--fg);-webkit-appearance:none;appearance:none;min-height:44px}
+input::placeholder{color:var(--mut)}
+input[type="month"]{min-width:0;max-width:100%;display:block;text-align:left}
+input::-webkit-date-and-time-value{text-align:left}
+.tabs{background:var(--field);border-radius:10px;padding:2px;gap:0}
+.tabs button{border-radius:8px;padding:6px 16px;background:none;font-size:13px}
+.tabs button[aria-pressed="true"]{background:var(--panel);box-shadow:0 2px 8px rgba(0,0,0,.12)}
+#q{border-radius:10px;padding:8px 12px}
+.mh{display:flex;justify-content:space-between;gap:12px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:var(--mut);padding:16px 0 6px;font-variant-numeric:tabular-nums}
+.e{display:grid;grid-template-columns:auto 1fr auto;gap:12px;padding:11px 0;align-items:center;width:100%;background:none;border-bottom:.5px solid var(--line);border-radius:0;text-align:left;font-weight:400}
+.e:active{transform:none}
+.who{font-size:12px;font-weight:600;padding:3px 9px;border-radius:99px;max-width:64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.who.a{background:var(--a-soft);color:var(--a)}.who.b{background:var(--b-soft);color:var(--b)}
+.t{min-width:0;overflow-wrap:anywhere}.t small{display:block;color:var(--mut)}
+.n{text-align:right;font-variant-numeric:tabular-nums;font-weight:500}.n small{display:block;color:var(--mut);font-weight:400}
+.msg{color:var(--mut);font-size:13px}
+details{padding:14px 20px}
+details summary{cursor:pointer;color:var(--mut);font-size:14px;font-weight:500}
+.set{display:grid;gap:14px;margin-top:14px}
+</style>
+</head>
+<body>
+<main>
+  <section class="bal hero card" aria-live="polite">
+    <h1 class="eyebrow">Family Evens · open balance</h1>
+    <div class="big" id="big">All square</div>
+    <div class="msg" id="sub"></div>
+    <div class="row" id="settle"></div>
+  </section>
+
+  <form class="panel card" id="form">
+    <div class="row" style="justify-content:space-between"><h2 id="ftitle">Add an expense</h2><button type="button" id="cancel" hidden>Cancel edit</button></div>
+    <div class="chips" id="chips"></div>
+    <div class="grid">
+      <label class="wide">What<input id="what" required list="known" autocomplete="off" placeholder="Pick above or type, e.g. Dinner"><datalist id="known"></datalist></label>
+      <label>Amount (HK$)<input id="amount" type="number" inputmode="decimal" min="0.01" step="0.01" required></label>
+      <label>For month<input id="period" type="month" required></label>
+      <label>Paid by<select id="payer"></select></label>
+      <label>Split<select id="split"><option value="half">50 / 50</option><option value="full">Other person pays all</option><option value="custom">Custom amount</option></select></label>
+      <label class="wide" id="shareWrap" hidden>Other person owes (HK$)<input id="share" type="number" inputmode="decimal" min="0" step="0.01"></label>
+      <label class="wide">Note (optional)<input id="note" autocomplete="off"></label>
+    </div>
+    <div class="row"><button class="pri" id="save">Save expense</button><button type="button" id="clear">Clear</button><button type="button" class="danger" id="del" hidden>Delete</button><span class="msg" id="fmsg"></span></div>
+  </form>
+
+  <section>
+    <div class="row" style="justify-content:space-between">
+      <div class="row tabs"><button id="tOpen" aria-pressed="true">Open</button><button id="tAll" aria-pressed="false">All history</button></div>
+      <div style="flex:1 1 160px"><input id="q" aria-label="Search expenses" placeholder="Search"></div>
+    </div>
+    <div id="listWrap" class="card"><div id="list"></div></div>
+  </section>
+
+  <details class="card">
+    <summary>Settings &amp; backup</summary>
+    <div class="set">
+      <div class="grid"><label>Person 1<input id="nameA"></label><label>Person 2<input id="nameB"></label></div>
+      <div class="row">
+        <button type="button" id="export">Export backup (CSV)</button>
+        <button type="button" id="importBtn">Import CSV</button>
+        <input type="file" id="file" accept=".csv,text/csv" hidden>
+      </div>
+      <p class="msg" id="smsg">Everything is saved only on this phone. Export a backup now and then. Import takes this app's backup or the old Google Sheet CSV.</p>
+    </div>
+  </details>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const money=n=>"HK$"+Number(n).toLocaleString("en-HK",{maximumFractionDigits:2});
+const MONTHS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const plabel=p=>{const[y,m]=p.split("-");return MONTHS[+m-1]+" "+y};
+const ymd=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const nowP=()=>ymd(new Date()).slice(0,7);
+const MONTHLY=["Mortgage","Maid salary"];
+const KEY="family-evens-v1";
+
+let S={expenses:[],hidden:[],names:{a:"Jeff",b:"Wife"}};
+try{const raw=localStorage.getItem(KEY);if(raw)S={...S,...JSON.parse(raw)}}catch{}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(S));return true}catch(e){$("fmsg").textContent="Couldn't save on this phone: "+e.message;return false}}
+// Ask iOS to keep this app's storage instead of clearing it under pressure.
+navigator.storage?.persist?.().catch(()=>{});
+
+let tab="open",editing=null,confirmSettle=false;
+const newId=()=>"e"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+
+function suggestions(){
+  const by={};
+  for(const r of S.expenses) if(r.label)(by[r.label]??=[]).push(r);
+  const out=[];
+  for(const[label,rs]of Object.entries(by)){
+    rs.sort((x,y)=>x.date<y.date?-1:1);
+    const last=rs.at(-1),c={a:0,b:0};
+    rs.slice(-5).forEach(r=>c[r.payer]++);
+    if(rs.length<3||(new Date()-new Date(last.date))/864e5>365) continue;
+    out.push({label,cat:last.cat,amount:last.amount,payer:c.a>=c.b?"a":"b",n:rs.length,periods:new Set(rs.map(r=>r.period))});
+  }
+  return out.sort((x,y)=>y.n-x.n);
+}
+function render(){
+  const N=S.names,open=S.expenses.filter(r=>!r.settled);
+  const net=open.reduce((s,r)=>s+(r.payer==="a"?r.share:-r.share),0);
+  $("big").textContent=Math.abs(net)<.005?"All square":`${N[net>0?"b":"a"]} owes ${N[net>0?"a":"b"]} ${money(Math.abs(net))}`;
+  $("sub").textContent=open.length?`${open.length} unsettled ${open.length===1?"expense":"expenses"}`:S.expenses.length?"Nothing to pay back right now":"No expenses yet. Import your old sheet from Settings & backup, or add one below.";
+  const st=$("settle");st.textContent="";
+  if(open.length&&!confirmSettle){const b=document.createElement("button");b.className="pri";b.textContent="Mark as paid back";b.onclick=()=>{confirmSettle=true;render()};st.append(b)}
+  if(confirmSettle){
+    const y=document.createElement("button");y.className="pri";y.textContent=`Yes, settle ${open.length}`;y.onclick=settle;
+    const n=document.createElement("button");n.textContent="Not yet";n.onclick=()=>{confirmSettle=false;render()};
+    st.append(y,n);
+  }
+  const sug=suggestions(),due=[];
+  for(const s of sug) if(MONTHLY.includes(s.label)) for(let i=2;i>=0;i--){
+    const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-i);
+    const p=ymd(d).slice(0,7);
+    if(!s.periods.has(p)) due.push({...s,period:p});
+  }
+  const chips=$("chips");chips.textContent="";
+  const add=(s,cls,txt,key)=>{
+    if(S.hidden.includes(key)) return;
+    const w=document.createElement("span");w.className="chipw "+cls;
+    const b=document.createElement("button");b.type="button";b.className="chip";b.innerHTML=txt;b.onclick=()=>pick(s);
+    const x=document.createElement("button");x.type="button";x.className="x";x.textContent="×";x.setAttribute("aria-label","Hide this suggestion");x.onclick=()=>{S.hidden=[...S.hidden,key];persist();render()};
+    w.append(b,x);chips.append(w)};
+  due.forEach(s=>add(s,"due",`${esc(s.label)} <b>${plabel(s.period)} not logged</b>`,`due:${s.label}:${s.period}`));
+  sug.filter(s=>!S.hidden.includes("sug:"+s.label)).slice(0,8).forEach(s=>add(s,"",`${esc(s.label)} <b>${esc(N[s.payer])} · ${Math.round(s.amount).toLocaleString()}</b>`,"sug:"+s.label));
+  if(S.hidden.length){const r=document.createElement("button");r.type="button";r.className="link";r.textContent=`Show ${S.hidden.length} hidden`;r.onclick=()=>{S.hidden=[];persist();render()};chips.append(r)}
+  $("known").innerHTML=sug.map(s=>`<option value="${esc(s.label)}">`).join("");
+  const pv=$("payer").value||"a";
+  $("payer").innerHTML=["a","b"].map(k=>`<option value="${k}"${k===pv?" selected":""}>${esc(N[k])}</option>`).join("");
+  const q=$("q").value.trim().toLowerCase();
+  let rows=(tab==="open"?open:S.expenses).filter(r=>!q||(r.what+" "+(r.label||"")+" "+r.note+" "+r.cat).toLowerCase().includes(q));
+  rows=[...rows].sort((x,y)=>x.period===y.period?(x.date<y.date?1:-1):(x.period<y.period?1:-1));
+  let html="",p=null;
+  for(const r of rows){
+    if(r.period!==p){p=r.period;const m=rows.filter(x=>x.period===p),t=k=>m.filter(x=>x.payer===k).reduce((s,x)=>s+x.amount,0);
+      html+=`<div class="mh"><span>${plabel(p)}</span><span>${esc(N.a)} ${money(t("a"))} · ${esc(N.b)} ${money(t("b"))}</span></div>`}
+    html+=`<button class="e" data-id="${esc(r.id)}"><span class="who ${r.payer}">${esc(N[r.payer])}</span><span class="t">${esc(r.what)}<small>${esc(r.cat)}${r.note?" · "+esc(r.note):""}${r.settled?" · settled":""}</small></span><span class="n">${money(r.amount)}<small>owes ${money(r.share)}</small></span></button>`;
+  }
+  $("list").innerHTML=html||`<p class="msg">${q?"No expenses match that search.":tab==="open"?"Nothing open. New expenses appear here until you mark them as paid back.":"No expenses yet."}</p>`;
+}
+function pick(s){resetEdit();$("what").value=s.label;$("amount").value=s.amount;$("payer").value=s.payer;$("period").value=s.period||nowP();$("split").value="half";$("shareWrap").hidden=true;$("amount").focus();$("amount").select()}
+function resetEdit(){editing=null;$("ftitle").textContent="Add an expense";$("save").textContent="Save expense";$("cancel").hidden=$("del").hidden=true;$("del").textContent="Delete"}
+function clearForm(){$("form").reset();$("period").value=nowP();$("shareWrap").hidden=true;resetEdit();render()}
+function startEdit(id){const r=S.expenses.find(x=>x.id===id);if(!r)return;editing=r;
+  $("ftitle").textContent="Edit expense";$("save").textContent="Save changes";$("cancel").hidden=$("del").hidden=false;
+  $("what").value=r.what;$("amount").value=r.amount;$("period").value=r.period;$("payer").value=r.payer;$("note").value=r.note||"";
+  const half=Math.abs(r.share-r.amount/2)<.005;$("split").value=half?"half":"custom";$("share").value=r.share;$("shareWrap").hidden=half;
+  $("form").scrollIntoView({behavior:"smooth",block:"center"})}
+function settle(){
+  const on=ymd(new Date());
+  S.expenses=S.expenses.map(r=>r.settled?r:{...r,settled:true,settledOn:on});
+  persist();confirmSettle=false;render();
+}
+$("form").addEventListener("submit",e=>{
+  e.preventDefault();
+  const amount=+$("amount").value,split=$("split").value;
+  const share=split==="half"?Math.round(amount*50)/100:split==="full"?amount:+$("share").value;
+  if(share>amount){$("fmsg").textContent="The amount owed can't be more than the expense.";return}
+  const what=$("what").value.trim(),known=suggestions().find(s=>s.label.toLowerCase()===what.toLowerCase());
+  const g=classify(what);
+  const body={id:editing?.id??newId(),what,amount,share,period:$("period").value,payer:$("payer").value,note:$("note").value.trim(),
+    label:known?.label??g.label,cat:known?.cat??g.cat,date:editing?.date??ymd(new Date()),settled:editing?.settled??false};
+  S.expenses=editing?S.expenses.map(r=>r.id===editing.id?body:r):[...S.expenses,body];
+  if(persist()){clearForm();$("fmsg").textContent="Saved";setTimeout(()=>$("fmsg").textContent="",2000)}
+});
+$("split").onchange=()=>{$("shareWrap").hidden=$("split").value!=="custom"};
+$("cancel").onclick=clearForm;
+$("clear").onclick=()=>{clearForm();$("fmsg").textContent=""};
+$("del").onclick=()=>{if($("del").textContent==="Delete"){$("del").textContent="Confirm delete";return}
+  S.expenses=S.expenses.filter(r=>r.id!==editing.id);persist();clearForm()};
+$("list").onclick=e=>{const b=e.target.closest(".e");if(b)startEdit(b.dataset.id)};
+$("q").oninput=render;
+for(const[id,t]of[["tOpen","open"],["tAll","all"]]) $(id).onclick=()=>{tab=t;$("tOpen").setAttribute("aria-pressed",t==="open");$("tAll").setAttribute("aria-pressed",t==="all");render()};
+for(const[id,k]of[["nameA","a"],["nameB","b"]]){$(id).value=S.names[k];$(id).onchange=e=>{S.names={...S.names,[k]:e.target.value.trim()||S.names[k]};persist();render()}}
+
+/* ---------- CSV import / export ---------- */
+const RULES=[
+ [/供樓|house fee|mortgage/i,"Mortgage","Home"],
+ [/maid.*salary|maid (sep|oct)|姐姐.*人工|七月人工/i,"Maid salary","Helper"],
+ [/maid/i,null,"Helper"],
+ [/citi/i,"Citi card","Card"],
+ [/hsbc/i,"HSBC card","Card"],
+ [/管理費|mgmt/i,"Mgmt fee","Home"],
+ [/差响|差餉|gov rent/i,"Gov rent & rates","Home"],
+ [/電費|eletric|electric/i,"Electricity","Home"],
+ [/水費/i,"Water","Home"],
+ [/koey|外母/i,"Koey mum 家用","Family"],
+ [/^mum 家用/i,"Mum 家用","Family"],
+ [/^dad 家用/i,"Dad 家用","Family"],
+ [/^家用$/,"家用","Family"],
+ [/bb|百日|playgroup|cpda|sleeping|bria|meowmoew|生日|中大|住院/i,null,"Baby"],
+];
+function classify(what){for(const[re,label,cat]of RULES) if(re.test(what)) return{label,cat};return{label:null,cat:"Other"}}
+function parseCSV(text){
+  const rows=[];let row=[],f="",q=false;
+  text=text.replace(/^﻿/,"");
+  for(let i=0;i<text.length;i++){const c=text[i];
+    if(q){if(c==='"'){if(text[i+1]==='"'){f+='"';i++}else q=false}else f+=c}
+    else if(c==='"')q=true;else if(c===","){row.push(f);f=""}
+    else if(c==="\n"||c==="\r"){if(c==="\r"&&text[i+1]==="\n")i++;row.push(f);rows.push(row);row=[];f=""}
+    else f+=c}
+  if(f||row.length){row.push(f);rows.push(row)}
+  return rows.filter(r=>r.some(x=>x.trim()));
+}
+const num=s=>parseFloat(String(s).replace(/[$,\s]/g,""))||0;
+const FULLM="January February March April May June July August September October November December".split(" ");
+function fromSheet(rows,h){
+  const ix=n=>h.findIndex(x=>x.trim()===n);
+  const [iT,iY,iM,iW,iA,iP,iS,iSp,iR]=["時間戳記","Year","Month","What?","How Much?","Paid by","Settled?","Split","Remarks"].map(ix);
+  return rows.map((r,k)=>{
+    const d=r[iT].split(" ")[0].split("/").map(Number);
+    let y=+r[iY];const m=FULLM.indexOf(r[iM].trim())+1;
+    if(y<d[0]&&m<=d[1]) y=d[0]; // year typed wrong when the entry was made in the same year
+    const what=r[iW].trim(),g=classify(what);
+    return{id:"s"+String(k+1).padStart(3,"0"),date:`${d[0]}-${String(d[1]).padStart(2,"0")}-${String(d[2]).padStart(2,"0")}`,period:`${y}-${String(m).padStart(2,"0")}`,
+      what,label:g.label,cat:g.cat,amount:num(r[iA]),payer:r[iP].trim()==="Me"?"a":"b",share:Math.abs(num(r[iSp])),settled:r[iS].trim()==="Yes",note:(r[iR]||"").trim()};
+  });
+}
+const COLS=["id","date","period","what","label","cat","amount","payer","share","settled","settledOn","note"];
+function fromBackup(rows,h){
+  return rows.map(r=>{const o={};h.forEach((k,i)=>o[k.trim()]=r[i]??"");
+    return{...o,label:o.label||null,amount:num(o.amount),share:num(o.share),settled:o.settled==="true",settledOn:o.settledOn||undefined}});
+}
+$("importBtn").onclick=()=>$("file").click();
+$("file").onchange=async e=>{
+  const file=e.target.files[0];if(!file)return;
+  try{
+    const [h,...rows]=parseCSV(await file.text());
+    const list=h.map(x=>x.trim()).includes("時間戳記")?fromSheet(rows,h):h.map(x=>x.trim()).includes("payer")?fromBackup(rows,h):null;
+    if(!list) throw new Error("this isn't a Family Evens backup or the old sheet's CSV");
+    const map=new Map(S.expenses.map(r=>[r.id,r]));list.forEach(r=>map.set(r.id,r));
+    S.expenses=[...map.values()];persist();render();
+    $("smsg").textContent=`Imported ${list.length} expenses.`;
+  }catch(err){$("smsg").textContent="Couldn't import: "+err.message}
+  e.target.value="";
+};
+$("export").onclick=async()=>{
+  const cell=v=>{v=v==null?"":String(v);return/[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+  const csv="﻿"+[COLS.join(","),...S.expenses.map(r=>COLS.map(k=>cell(r[k])).join(","))].join("\n");
+  const name=`family-evens-${ymd(new Date())}.csv`,file=new File([csv],name,{type:"text/csv"});
+  try{if(navigator.canShare?.({files:[file]})){await navigator.share({files:[file]});return}}catch(e){if(e.name==="AbortError")return}
+  const a=document.createElement("a");a.href=URL.createObjectURL(file);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+};
+
+$("period").value=nowP();
+render();
+if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>
