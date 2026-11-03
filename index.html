@@ -49,6 +49,12 @@ button.danger{color:var(--b);background:var(--b-soft)}
 .due .chip{color:var(--a)}.due .chip b{color:var(--a);opacity:.8}
 .x{background:none;padding:6px 11px 6px 6px;color:var(--mut);font-size:15px;line-height:1}
 .link{background:none;color:var(--a);font-size:13px;padding:6px 4px}
+/* Phones: suggestions sit in one row that swipes sideways */
+@media (max-width:600px){
+  .chips{flex-wrap:nowrap;overflow-x:auto;margin-inline:-20px;padding-inline:20px;scroll-padding-inline:20px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .chips::-webkit-scrollbar{display:none}
+  .chipw,.link{flex:none;white-space:nowrap}
+}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .grid>label{display:grid;gap:5px;font-size:13px;color:var(--mut);min-width:0}
 .wide{grid-column:1/-1}
@@ -177,7 +183,7 @@ function render(){
     const b=document.createElement("button");b.type="button";b.className="chip";b.innerHTML=txt;b.onclick=()=>pick(s);
     const x=document.createElement("button");x.type="button";x.className="x";x.textContent="×";x.setAttribute("aria-label","Hide this suggestion");x.onclick=()=>{S.hidden=[...S.hidden,key];persist();render()};
     w.append(b,x);chips.append(w)};
-  due.forEach(s=>add(s,"due",`${esc(s.label)} <b>${plabel(s.period)} not logged</b>`,`due:${s.label}:${s.period}`));
+  due.forEach(s=>add(s,"due",`${esc(s.label)} <b>· ${plabel(s.period)} due</b>`,`due:${s.label}:${s.period}`));
   sug.filter(s=>!S.hidden.includes("sug:"+s.label)).slice(0,8).forEach(s=>add(s,"",`${esc(s.label)} <b>${esc(N[s.payer])} · ${Math.round(s.amount).toLocaleString()}</b>`,"sug:"+s.label));
   if(S.hidden.length){const r=document.createElement("button");r.type="button";r.className="link";r.textContent=`Show ${S.hidden.length} hidden`;r.onclick=()=>{S.hidden=[];persist();render()};chips.append(r)}
   $("known").innerHTML=sug.map(s=>`<option value="${esc(s.label)}">`).join("");

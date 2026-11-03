@@ -1,5 +1,5 @@
 // Keeps the app working offline. Bump VERSION when any file changes.
-const VERSION = "evens-v1";
+const VERSION = "evens-v2";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icon-180.png", "icon-512.png"];
 
 self.addEventListener("install", e => {
